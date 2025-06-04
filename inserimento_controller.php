@@ -14,7 +14,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $durata = (int)($_POST['durata'] ?? 0);
     $percentuale = (int)($_POST['percentuale'] ?? 0);
     $data_inizio = $_POST['data_inizio'] ?? '';
-    $data_fine = $_POST['data_fine'] ?? '';
+    $dataObj = DateTime::createFromFormat('Y-m-d', $data_inizio);
+    if ($dataObj === false) {
+        $errors[] = "Formato data_inizio non valido.";
+    } else {
+        $dataObj->modify('+' . ($durata - 1) . ' days');
+        $data_fine = $dataObj->format('Y-m-d');
+    }
+
     $referente = (int)($_POST['referente'] ?? 0);
     $collaboratori = trim($_POST['collaboratori'] ?? '');
 

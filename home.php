@@ -165,10 +165,6 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
               <label for="data_inizio">Inizio</label>
               <input type="date" name="data_inizio" class="form-control" required>
             </div>
-            <div class="col-6">
-              <label for="data_fine">Fine</label>
-              <input type="date" name="data_fine" class="form-control" required>
-            </div>
             <div class="col-12">
               <label for="referente">Referente</label>
               <select name="referente" id="referente" class="form-select" required>
