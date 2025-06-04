@@ -1,7 +1,3 @@
-# clivatechProject
-docker run --name myXampp -p 41061:22 -p 41062:80 -d -v /workspaces/clivatechProject:/www tomsik68/xampp:8
-
-
 <?php
 include "connessione.php";
 session_start();
@@ -17,7 +13,9 @@ if (!$connessione) {
 $categorie = $connessione->query("SELECT * FROM categoria ORDER BY TIPOCATEGORIA");
 $utenti = $connessione->query("SELECT * FROM UTENTE ORDER BY COGNOME, NOME");
 
-$progetti_query = $connessione->query("
+$filtro_categoria = $_GET['filtro_categoria'] ?? '';
+
+$query = "
     SELECT 
         attività.*, 
         categoria.TIPOCATEGORIA, 
@@ -25,8 +23,15 @@ $progetti_query = $connessione->query("
     FROM attività
     JOIN categoria ON attività.categoria_id = categoria.ID
     JOIN UTENTE ON attività.referente = UTENTE.ID
-    ORDER BY data_inizio DESC
-");
+";
+
+if ($filtro_categoria !== '') {
+    $query .= " WHERE categoria.ID = " . intval($filtro_categoria);
+}
+
+$query .= " ORDER BY data_inizio DESC";
+
+$progetti_query = $connessione->query($query);
 
 $progetti_array = [];
 while ($row = $progetti_query->fetch_assoc()) {
@@ -146,7 +151,10 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
               <label for="categoria">Categoria</label>
               <select name="categoria" id="categoria" class="form-select" required>
                 <option value="">— Seleziona Categoria —</option>
-                <?php while ($cat = $categorie->fetch_assoc()): ?>
+                <?php
+                // Riporto il puntatore a inizio per riutilizzare $categorie
+                $categorie->data_seek(0);
+                while ($cat = $categorie->fetch_assoc()): ?>
                   <option value="<?= $cat['ID'] ?>"><?= htmlspecialchars($cat['TIPOCATEGORIA']) ?></option>
                 <?php endwhile; ?>
               </select>
@@ -165,18 +173,44 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
               <label for="referente">Referente</label>
               <select name="referente" id="referente" class="form-select" required>
                 <option value="">— Seleziona Referente —</option>
-                <?php $utenti->data_seek(0); while ($u = $utenti->fetch_assoc()): ?>
+                <?php
+                $utenti->data_seek(0);
+                while ($u = $utenti->fetch_assoc()): ?>
                   <option value="<?= $u['ID'] ?>"><?= htmlspecialchars($u['NOME'] . ' ' . $u['COGNOME']) ?></option>
                 <?php endwhile; ?>
               </select>
             </div>
-            <div class="col-12"><input type="text" name="collaboratori" class="form-control" placeholder="Collaboratori (separati da virgola)"></div>
+            <div class="mb-3" style="display: flex; align-items: center;">
+            <input type="checkbox" id="usaScreenshotDescrizione" onchange="toggleDescrizione()" style="margin-right: 10px; width: 18px; height: 18px;" />
+            <label for="usaScreenshotDescrizione" style="margin: 0; font-weight: 500;">
+              Nessun Collaboratore
+            </label>
+          </div>
+            <div class="col-12"><input type="text" id="collaboratori" name="collaboratori" class="form-control" placeholder="Collaboratori (separati da virgola)"></div>
             <div class="col-12 d-grid"><button type="submit" class="btn btn-primary">Inserisci</button></div>
           </form>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- FILTRO CATEGORIA -->
+  <?php
+  // Riporto puntatore $categorie a inizio per riutilizzo
+  $categorie->data_seek(0);
+  ?>
+  <form method="GET" class="mb-4 d-flex align-items-center gap-3">
+    <label for="filtro_categoria" class="mb-0">Filtra per categoria:</label>
+    <select name="filtro_categoria" id="filtro_categoria" class="form-select" style="width: 250px;">
+      <option value="">— Tutte le categorie —</option>
+      <?php while ($cat = $categorie->fetch_assoc()): ?>
+        <option value="<?= $cat['ID'] ?>" <?= ($filtro_categoria == $cat['ID']) ? 'selected' : '' ?>>
+          <?= htmlspecialchars($cat['TIPOCATEGORIA']) ?>
+        </option>
+      <?php endwhile; ?>
+    </select>
+    <button type="submit" class="btn btn-primary">Applica</button>
+  </form>
 
   <!-- TABELLA -->
   <div class="table-area">
@@ -189,6 +223,7 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
           <th>Inizio</th>
           <th>Fine</th>
           <th>Referente</th>
+          <th>Collaboratori</th>
           <th>Completamento</th>
           <th>Modifica</th>
           <th>Elimina</th>
@@ -203,24 +238,36 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
             <td><?= $row['data_inizio'] ?></td>
             <td><?= $row['data_fine'] ?></td>
             <td><?= htmlspecialchars($row['referente_nome']) ?></td>
+           <td>
+          <?php
+          $collaboratori = $row['collaboratori'] ?? '';
+          $collaboratoriPulito = trim($collaboratori);
+          if ($collaboratoriPulito === '' || strtolower($collaboratoriPulito) === 'null') {
+              echo 'Nessuno';
+          } else {
+              echo htmlspecialchars($collaboratoriPulito);
+          }
+          ?>
+          </td>
             <td><?= $row['PERCENTUALE'] ?>%</td>
             <td><a href="modifica.php?id=<?= $row['id'] ?>" class="btn btn-warning btn-sm">Modifica</a></td>
             <td>
-              <form action="elimina.php" method="POST" class="d-inline">
-                <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                <button type="submit" class="btn btn-danger btn-sm">Elimina</button>
-              </form>
+              <a href="elimina.php?id=<?= urlencode($row['id']) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Sei sicuro di voler eliminare questa attività?');">Elimina</a>
             </td>
             <td class="calendar-cell">
               <table class="calendar">
                 <thead>
                   <tr>
-                    <?php $tmpDate = clone $mese_inizio; for ($m=0; $m < 7; $m++): ?>
+                    <?php
+                    $tmpDate = clone $mese_inizio;
+                    for ($m=0; $m < 7; $m++): ?>
                       <th><?= ucfirst(strftime('%B %Y', $tmpDate->getTimestamp())) ?></th>
                       <?php $tmpDate->modify('+1 month'); endfor; ?>
                   </tr>
                   <tr>
-                    <?php $weekdays = ['L', 'M', 'M', 'G', 'V', 'S', 'D']; for ($m=0; $m < 7; $m++): ?>
+                    <?php
+                    $weekdays = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+                    for ($m=0; $m < 7; $m++): ?>
                       <th class="weekdays"><?= implode(' ', $weekdays) ?></th>
                     <?php endfor; ?>
                   </tr>
@@ -256,8 +303,87 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
       </tbody>
     </table>
   </div>
-
+<!-- MODALE MODIFICA ATTIVITA -->
+<div class="modal fade" id="modalModificaAttivita" tabindex="-1" aria-labelledby="modalModificaAttivitaLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title" id="modalModificaAttivitaLabel">Modifica Attività</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+      </div>
+      <div class="modal-body">
+        <form action="modifica_controller.php" method="POST" enctype="multipart/form-data" id="formModificaAttivita">
+          <input type="hidden" name="id" id="modifica_id">
+          <div class="mb-3">
+            <label for="modifica_nome" class="form-label">Nome Attività</label>
+            <input type="text" name="nome" id="modifica_nome" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="modifica_categoria" class="form-label">Categoria</label>
+            <select name="categoria" id="modifica_categoria" class="form-select" required>
+              <option value="">Seleziona categoria</option>
+              <?php
+              $categorie->data_seek(0);
+              while ($cat = $categorie->fetch_assoc()) {
+                  echo '<option value="'.$cat['ID'].'">'.htmlspecialchars($cat['TIPOCATEGORIA']).'</option>';
+              }
+              ?>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="modifica_durata" class="form-label">Durata (giorni)</label>
+            <input type="number" name="durata" id="modifica_durata" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="modifica_percentuale" class="form-label">% Completamento</label>
+            <input type="number" name="percentuale" id="modifica_percentuale" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="modifica_data_inizio" class="form-label">Data Inizio</label>
+            <input type="date" name="data_inizio" id="modifica_data_inizio" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="modifica_data_fine" class="form-label">Data Fine</label>
+            <input type="date" name="data_fine" id="modifica_data_fine" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="modifica_referente" class="form-label">Referente</label>
+            <select name="referente" id="modifica_referente" class="form-select" required>
+              <option value="">Seleziona referente</option>
+              <?php
+              $utenti->data_seek(0);
+              while ($u = $utenti->fetch_assoc()) {
+                  echo '<option value="'.$u['ID'].'">'.htmlspecialchars($u['NOME'].' '.$u['COGNOME']).'</option>';
+              }
+              ?>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="modifica_collaboratori" class="form-label">Collaboratori</label>
+            <input type="text" name="collaboratori" id="modifica_collaboratori" class="form-control" placeholder="Separati da virgola">
+          </div>
+          <button type="submit" class="btn btn-warning">Salva Modifiche</button>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
+</div>
+<script>
+    function toggleDescrizione() {
+      const checkbox = document.getElementById("usaScreenshotDescrizione");
+      const textarea = document.getElementById("collaboratori");
+      if (checkbox.checked) {
+        textarea.disabled = true;
+        textarea.required = false;
+        textarea.value = "nessun Collaboratore";
+      } else {
+        textarea.disabled = false;
+        textarea.required = true;
+        textarea.value = "";
+      }
+    }
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
