@@ -9,20 +9,32 @@ if (!isset($_SESSION['id'])) {
 if (!$connessione) {
     die("Connessione fallita: " . mysqli_connect_error());
 }
-
+$tipi = $connessione->query("SELECT * FROM tipo ORDER BY ID");
+$nomi_attivita = $connessione->query("SELECT * FROM nomeattività ORDER BY nomeattività");
 $categorie = $connessione->query("SELECT * FROM categoria ORDER BY TIPOCATEGORIA");
 $utenti = $connessione->query("SELECT * FROM UTENTE ORDER BY COGNOME, NOME");
 
 $filtro_categoria = $_GET['filtro_categoria'] ?? '';
 
 $query = "
-    SELECT 
-        attività.*, 
-        categoria.TIPOCATEGORIA, 
-        CONCAT(UTENTE.NOME, ' ', UTENTE.COGNOME) AS referente_nome
-    FROM attività
+SELECT 
+    attività.ID,
+    nomeattività.nomeattività AS nome_attivita,
+    attività.durata,
+    attività.data_inizio,
+    attività.data_fine,
+    attività.referente,
+    attività.collaboratori,
+    attività.PERCENTUALE,
+    categoria.TIPOCATEGORIA, 
+    CONCAT(UTENTE.NOME, ' ', UTENTE.COGNOME) AS referente_nome,
+    tipo.ID as tipo_id,
+    tipo.tipoattività as tipo_nome
+FROM attività
     JOIN categoria ON attività.categoria_id = categoria.ID
     JOIN UTENTE ON attività.referente = UTENTE.ID
+    LEFT JOIN tipo ON attività.tipoattività_id = tipo.ID
+    JOIN nomeattività ON attività.nomeattività_id = nomeattività.ID
 ";
 
 if ($filtro_categoria !== '') {
@@ -117,6 +129,11 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
       background-color: #0d6efd;
       color: white;
     }
+    .tipo-previsione { background-color: #a3d5ff; border-color: #3399ff; }  /* azzurro */
+      .tipo-vincolante { background-color: #fff3b0; border-color: #f7d948; }  /* giallo */
+      .tipo-consuntivo { background-color: #ff8a8a; border-color: #d73a3a; }  /* rosso */
+      .tipo-ripianificata { background-color: #c39bd3; border-color: #7e57c2; } /* viola */
+
     @media (max-width: 768px) {
       .container-flex {
         flex-direction: column;
@@ -125,7 +142,7 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
         max-width: 100%;
         overflow-x: auto;
       }
-    }
+          }
   </style>
 </head>
 <body class="bg-light">
@@ -146,7 +163,16 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
         </div>
         <div class="modal-body">
           <form action="inserimento_controller.php" method="POST" enctype="multipart/form-data" class="row g-3">
-            <div class="col-12"><input type="text" name="nome" class="form-control" placeholder="Nome Attività" required></div>
+            <div class="col-12">
+              <label for="nome_attivita">Nome Attività</label>
+              <select name="nomeattivita" id="nome_attivita" class="form-select" required>
+                <option value="">— Seleziona Nome Attività —</option>
+                <?php while ($attivita = $nomi_attivita->fetch_assoc()): ?>
+                  <option value="<?= $attivita['ID'] ?>"><?= htmlspecialchars($attivita['nomeattività']) ?></option>
+                <?php endwhile; ?>
+              </select>
+            </div>
+
             <div class="col-12">
               <label for="categoria">Categoria</label>
               <select name="categoria" id="categoria" class="form-select" required>
@@ -159,6 +185,17 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
                 <?php endwhile; ?>
               </select>
             </div>
+            <div class="col-12">
+  <label for="tipo">Tipo</label>
+  <select name="tipo" id="tipo" class="form-select" required>
+    <option value="">— Seleziona Tipo —</option>
+    <?php
+    $tipi->data_seek(0);
+    while ($tipo = $tipi->fetch_assoc()): ?>
+      <option value="<?= $tipo['ID'] ?>"><?= htmlspecialchars($tipo['tipoattività']) ?></option>
+    <?php endwhile; ?>
+  </select>
+</div>
             <div class="col-6"><input type="number" name="durata" class="form-control" placeholder="Durata (giorni)" required></div>
             <div class="col-6"><input type="number" name="percentuale" class="form-control" placeholder="Completamento (%)" required></div>
             <div class="col-6">
@@ -229,7 +266,7 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
       <tbody>
         <?php foreach ($progetti_array as $row): ?>
           <tr>
-            <td><?= htmlspecialchars($row['nome']) ?></td>
+<td><?= htmlspecialchars($row['nome_attivita']) ?></td>
             <td><?= $row['durata'] ?> gg</td>
             <td><?= $row['data_inizio'] ?></td>
             <td><?= $row['data_fine'] ?></td>
@@ -245,11 +282,9 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
           }
           ?>
           </td>
-            <td><?= $row['PERCENTUALE'] ?>%</td>
-            <td><a href="modifica.php?id=<?= $row['id'] ?>" class="btn btn-warning btn-sm">Modifica</a></td>
-            <td>
-              <a href="elimina.php?id=<?= urlencode($row['id']) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Sei sicuro di voler eliminare questa attività?');">Elimina</a>
-            </td>
+            <td><?= htmlspecialchars($row['PERCENTUALE']) ?>%</td>
+            <<td><a href="modifica.php?id=<?= intval($row['ID']) ?>" class="btn btn-warning btn-sm">Modifica</a></td>
+<td><a href="elimina.php?id=<?= intval($row['ID']) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Sei sicuro di voler eliminare questa attività?');">Elimina</a></td>
             <td class="calendar-cell">
               <table class="calendar">
                 <thead>
@@ -283,7 +318,26 @@ $mese_fine = (clone $mese_inizio)->modify('+6 month');
                           $currentDay = new DateTime($tmpDate->format('Y-m-') . str_pad($day, 2, '0', STR_PAD_LEFT));
                           $startAct = new DateTime($row['data_inizio']);
                           $endAct = new DateTime($row['data_fine']);
-                          $class = ($currentDay >= $startAct && $currentDay <= $endAct) ? 'day-active' : 'day-inactive';
+                          if ($currentDay >= $startAct && $currentDay <= $endAct) {
+    switch ($row['tipo_id']) {
+        case 1:
+            $class = 'day-box tipo-previsione';
+            break;
+        case 2:
+            $class = 'day-box tipo-vincolante';
+            break;
+        case 3:
+            $class = 'day-box tipo-consuntivo';
+            break;
+        case 4:
+            $class = 'day-box tipo-ripianificata';
+            break;
+        default:
+            $class = 'day-box day-active';
+    }
+} else {
+    $class = 'day-box day-inactive';
+}
                           echo '<div title="' . $currentDay->format('d-m-Y') . '" class="day-box ' . $class . '">' . $day . '</div>';
                         }
                         echo '</div></td>';
