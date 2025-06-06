@@ -25,7 +25,7 @@ try{
                 $_SESSION['cognome']=$cognome;
             }
             $result->close();
-                   header("Location: home.php");
+                   header("Location: commesse.php");
         }else{
             header("Location: login.php?err=Utente non trovato");
         }

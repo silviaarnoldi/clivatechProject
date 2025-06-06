@@ -1,52 +1,39 @@
 <?php
 include "connessione.php";
 session_start();
+
 if (!isset($_SESSION['id'])) {
     header("Location: login.php?err=Accesso negato");
     exit;
 }
 
-if (!$connessione) {
-    die("Connessione fallita: " . mysqli_connect_error());
+$id = intval($_GET['id'] ?? 0);
+
+$query = $connessione->query("SELECT * FROM attività WHERE ID = $id");
+if (!$query) {
+    die("Errore query attività: " . $connessione->error);
+}
+$attivita = $query->fetch_assoc();
+
+if (!$attivita) {
+    die("Attività non trovata.");
 }
 
-if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    die("ID attività non valido");
-}
-
-$id = intval($_GET['id']);
-
-$query = "
-SELECT 
-    attività.ID,
-    attività.nomeattività_id,
-    attività.durata,
-    attività.data_inizio,
-    attività.data_fine,
-    attività.referente,
-    attività.collaboratori,
-    attività.PERCENTUALE,
-    attività.categoria_id,
-    attività.tipoattività_id
-FROM attività
-WHERE attività.ID = $id
-LIMIT 1";
-
-$result = $connessione->query($query);
-
-if (!$result || $result->num_rows === 0) {
-    die("Attività non trovata");
-}
-
-$attivita = $result->fetch_assoc();
-
-// Preleva dati per select (come in index)
-$tipi = $connessione->query("SELECT * FROM tipo ORDER BY ID");
 $nomi_attivita = $connessione->query("SELECT * FROM nomeattività ORDER BY nomeattività");
+if (!$nomi_attivita) {
+    die("Errore query nomeattività: " . $connessione->error);
+}
 $categorie = $connessione->query("SELECT * FROM categoria ORDER BY TIPOCATEGORIA");
-$utenti = $connessione->query("SELECT * FROM UTENTE ORDER BY COGNOME, NOME");
-
+if (!$categorie) {
+    die("Errore query categoria: " . $connessione->error);
+}
+$tipi = $connessione->query("SELECT * FROM tipo ORDER BY ID");
+if (!$tipi) {
+    die("Errore query tipo: " . $connessione->error);
+}
 ?>
+
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -56,89 +43,75 @@ $utenti = $connessione->query("SELECT * FROM UTENTE ORDER BY COGNOME, NOME");
 </head>
 <body class="bg-light">
 <div class="container py-5">
-    <h1 class="mb-4">Modifica Attività</h1>
+    <h1 class="mb-4">✏️ Modifica Attività</h1>
     <form action="modifica_controller.php" method="POST" class="row g-3">
-        <input type="hidden" name="id" value="<?= htmlspecialchars($attivita['ID']) ?>">
-        
+        <input type="hidden" name="id" value="<?= htmlspecialchars($attività['ID']) ?>">
+
         <div class="col-12">
-            <label for="nomeattivita" class="form-label">Nome Attività</label>
-            <select name="nomeattivita" id="nomeattivita" class="form-select" required>
-                <option value="">— Seleziona Nome Attività —</option>
-                <?php while ($na = $nomi_attivita->fetch_assoc()): ?>
-                    <option value="<?= $na['ID'] ?>" <?= ($na['ID'] == $attivita['nomeattività_id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($na['nomeattività']) ?>
+            <label>Nome Attività</label>
+            <select name="nomeattivita" class="form-select" required>
+                <?php while ($r = $nomi_attivita->fetch_assoc()): ?>
+                    <option value="<?= $r['ID'] ?>" <?= isset($attivita['nomeattività_id']) && $r['ID'] == $attivita['nomeattività_id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($r['nomeattività']) ?>
+                    </option>
+                <?php endwhile; ?>
+            </select>
+        </div>
+
+        <?php if (!empty($attivita['descrizione'])): ?>
+        <div class="col-12">
+            <label>Descrizione</label>
+            <input type="text" name="descrizione" class="form-control" value="<?= htmlspecialchars($attivita['descrizione']) ?>">
+        </div>
+        <?php endif; ?>
+
+        <div class="col-12">
+            <label>Categoria</label>
+            <select name="categoria" class="form-select" required>
+                <?php while ($c = $categorie->fetch_assoc()): ?>
+                    <option value="<?= $c['ID'] ?>" <?= isset($attivita['categoria_id']) && $c['ID'] == $attivita['categoria_id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($c['TIPOCATEGORIA']) ?>
                     </option>
                 <?php endwhile; ?>
             </select>
         </div>
 
         <div class="col-12">
-            <label for="categoria" class="form-label">Categoria</label>
-            <select name="categoria" id="categoria" class="form-select" required>
-                <option value="">— Seleziona Categoria —</option>
-                <?php while ($cat = $categorie->fetch_assoc()): ?>
-                    <option value="<?= $cat['ID'] ?>" <?= ($cat['ID'] == $attivita['categoria_id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($cat['TIPOCATEGORIA']) ?>
+            <label>Tipo</label>
+            <select name="tipo" class="form-select" required>
+                <?php while ($t = $tipi->fetch_assoc()): ?>
+                    <option value="<?= $t['ID'] ?>" <?= isset($attivita['tipoattività_id']) && $t['ID'] == $attivita['tipoattività_id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($t['tipoattività']) ?>
                     </option>
                 <?php endwhile; ?>
             </select>
         </div>
 
+        <div class="col-md-6">
+            <label>Durata</label>
+            <input type="number" name="durata" class="form-control" value="<?= htmlspecialchars($attivita['durata']) ?>" required>
+        </div>
+
+        <div class="col-md-6">
+            <label>Data Inizio</label>
+            <input type="date" name="data_inizio" class="form-control" value="<?= htmlspecialchars($attivita['data_inizio']) ?>" required>
+        </div>
+
+        <?php if (!empty($attivita['collaboratori'])): ?>
         <div class="col-12">
-            <label for="tipo" class="form-label">Tipo</label>
-            <select name="tipo" id="tipo" class="form-select" required>
-                <option value="">— Seleziona Tipo —</option>
-                <?php while ($tipo = $tipi->fetch_assoc()): ?>
-                    <option value="<?= $tipo['ID'] ?>" <?= ($tipo['ID'] == $attivita['tipoattività_id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($tipo['tipoattività']) ?>
-                    </option>
-                <?php endwhile; ?>
-            </select>
+            <label>Collaboratori</label>
+            <input type="text" name="collaboratori" class="form-control" value="<?= htmlspecialchars($attivita['collaboratori']) ?>">
         </div>
-
-        <div class="col-6">
-            <label for="durata" class="form-label">Durata (giorni)</label>
-            <input type="number" name="durata" id="durata" class="form-control" required value="<?= htmlspecialchars($attivita['durata']) ?>">
-        </div>
-
-        <div class="col-6">
-            <label for="percentuale" class="form-label">Completamento (%)</label>
-            <input type="number" name="percentuale" id="percentuale" class="form-control" required value="<?= htmlspecialchars($attivita['PERCENTUALE']) ?>">
-        </div>
-
-        <div class="col-6">
-            <label for="data_inizio" class="form-label">Data Inizio</label>
-            <input type="date" name="data_inizio" id="data_inizio" class="form-control" required value="<?= htmlspecialchars($attivita['data_inizio']) ?>">
-        </div>
-
-        <div class="col-6">
-            <label for="data_fine" class="form-label">Data Fine</label>
-            <input type="date" name="data_fine" id="data_fine" class="form-control" required value="<?= htmlspecialchars($attivita['data_fine']) ?>">
-        </div>
-
-        <div class="col-12">
-            <label for="referente" class="form-label">Referente</label>
-            <select name="referente" id="referente" class="form-select" required>
-                <option value="">— Seleziona Referente —</option>
-                <?php while ($u = $utenti->fetch_assoc()): ?>
-                    <option value="<?= $u['ID'] ?>" <?= ($u['ID'] == $attivita['referente']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($u['NOME'] . ' ' . $u['COGNOME']) ?>
-                    </option>
-                <?php endwhile; ?>
-            </select>
-        </div>
-
-        <div class="col-12">
-            <label for="collaboratori" class="form-label">Collaboratori</label>
-            <input type="text" name="collaboratori" id="collaboratori" class="form-control" placeholder="Separati da virgola" value="<?= htmlspecialchars($attivita['collaboratori']) ?>">
-        </div>
+        <?php endif; ?>
 
         <div class="col-12 d-grid">
-            <button type="submit" class="btn btn-warning">Salva Modifiche</button>
+            <button type="submit" class="btn btn-primary">💾 Salva modifiche</button>
         </div>
     </form>
-    <a href="home.php" class="btn btn-secondary mt-3">Annulla</a>
+
+    <div class="mt-3">
+        <a href="home.php" class="btn btn-secondary">← Torna</a>
+    </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

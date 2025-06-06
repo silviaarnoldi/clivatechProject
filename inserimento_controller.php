@@ -1,92 +1,85 @@
 <?php
-session_start();
 include "connessione.php";
+session_start();
 
 if (!isset($_SESSION['id'])) {
     header("Location: login.php?err=Accesso negato");
     exit;
 }
 
-if (!$connessione) {
-    die("Connessione fallita: " . mysqli_connect_error());
+// Prendo i dati POST senza forzare a int dove non serve
+
+$id_commessa = $_GET['id_commessa'] 
+    ?? $_SESSION['id_commessa'] 
+    ?? $_COOKIE['id_commessa'] 
+    ?? null;
+
+if ($id_commessa === null) {
+    die("Commessa non specificata.");
+}
+$nome_attivita = intval($_POST['nomeattivita'] ?? 0);
+$categoria = intval($_POST['categoria'] ?? 0);
+$tipo = intval($_POST['tipo'] ?? 0);
+$durata = intval($_POST['durata'] ?? 0);
+$data_inizio = $_POST['data_inizio'] ?? null;
+$referente = intval($_POST['referente'] ?? $_SESSION['id']);
+$descrizione = isset($_POST['noDescrizione']) ? null : trim($_POST['descrizione'] ?? null);
+$collaboratori = isset($_POST['noCollaboratori']) ? null : trim($_POST['collaboratori'] ?? null);
+
+// Controllo dati essenziali
+if (!$commessa_id || !$nome_attivita || !$categoria || !$tipo || !$durata || !$data_inizio) {
+    die("Dati mancanti o non validi.");
 }
 
-// Funzione per sanitizzare input
-function clean_input($data) {
-    return trim(htmlspecialchars($data));
+// Controllo che la commessa esista (senza prepare e bind_param)
+$commessa_id_escaped = $connessione->real_escape_string($commessa_id);
+$query = "SELECT ID FROM COMMESSA WHERE ID = '$commessa_id_escaped'";
+$result = $connessione->query($query);
+
+if (!$result || $result->num_rows === 0) {
+    die("Errore: La commessa con ID '$commessa_id' non esiste nel database.");
 }
 
-// Controllo e sanitizzazione dati POST
-$nomeattivita = isset($_POST['nomeattivita']) ? intval($_POST['nomeattivita']) : 0;
-$categoria = isset($_POST['categoria']) ? intval($_POST['categoria']) : 0;
-$tipo = isset($_POST['tipo']) ? intval($_POST['tipo']) : 0;
-$durata = isset($_POST['durata']) ? intval($_POST['durata']) : 0;
-$percentuale = isset($_POST['percentuale']) ? intval($_POST['percentuale']) : 0;
-$data_inizio = isset($_POST['data_inizio']) ? $_POST['data_inizio'] : '';
-$referente = isset($_POST['referente']) ? intval($_POST['referente']) : 0;
-$collaboratori = isset($_POST['collaboratori']) ? clean_input($_POST['collaboratori']) : '';
-
-// Validazioni base
-$errors = [];
-
-if ($nomeattivita <= 0) $errors[] = "Nome attività non valido.";
-if ($categoria <= 0) $errors[] = "Categoria non valida.";
-if ($tipo <= 0) $errors[] = "Tipo non valido.";
-if ($durata <= 0) $errors[] = "Durata deve essere positiva.";
-if ($percentuale < 0 || $percentuale > 100) $errors[] = "Percentuale deve essere tra 0 e 100.";
-if (!$data_inizio || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $data_inizio)) $errors[] = "Data inizio non valida.";
-if ($referente <= 0) $errors[] = "Referente non valido.";
-
-// Calcolo data_fine in base a durata
-if (empty($errors)) {
-    $dataInizioObj = DateTime::createFromFormat('Y-m-d', $data_inizio);
-    if (!$dataInizioObj) {
-        $errors[] = "Data inizio non valida.";
-    } else {
-        $dataFineObj = clone $dataInizioObj;
-        // durata = numero giorni, fine = inizio + durata - 1
-        $dataFineObj->modify('+' . ($durata - 1) . ' days');
-        $data_fine = $dataFineObj->format('Y-m-d');
-    }
+// Calcolo data fine
+try {
+    $inizio = new DateTime($data_inizio);
+    $fine = clone $inizio;
+    $fine->modify("+$durata days");
+    $data_fine = $fine->format('Y-m-d');
+} catch (Exception $e) {
+    die("Data di inizio non valida.");
 }
 
-if (!empty($errors)) {
-    // Puoi gestire gli errori come preferisci, qui semplicemente reindirizzo con errore in GET
-    $errMsg = urlencode(implode(' ', $errors));
-    header("Location: index.php?err=$errMsg");
-    exit;
+// Preparo inserimento
+$stmt = $connessione->prepare("
+    INSERT INTO attività 
+    (COMMESSA_ID, nomeattività_id, categoria_id, tipoattività_id, durata, data_inizio, data_fine, referente, collaboratori, descrizione, PERCENTUALE)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+");
+
+if ($stmt === false) {
+    die("Errore nella preparazione della query: " . $connessione->error);
 }
 
-// Prepariamo la query con prepared statements per sicurezza
-$stmt = $connessione->prepare("INSERT INTO attività (nomeattività_id, categoria_id, tipoattività_id, durata, PERCENTUALE, data_inizio, data_fine, referente, collaboratori) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-if (!$stmt) {
-    die("Errore preparazione query: " . $connessione->error);
-}
-
+// Tipi parametri: s = stringa, i = intero
 $stmt->bind_param(
-    "iiiiissis",
-    $nomeattivita,
+    "siiiisssss",
+    $commessa_id,
+    $nome_attivita,
     $categoria,
     $tipo,
     $durata,
-    $percentuale,
     $data_inizio,
     $data_fine,
     $referente,
-    $collaboratori
+    $collaboratori,
+    $descrizione
 );
 
 if ($stmt->execute()) {
-    // Inserimento riuscito, redirect alla pagina principale
-    header("Location: home.php");
+    header("Location: home.php?id_commessa=" . urlencode($commessa_id));
+    exit;
 } else {
-    // Errore inserimento
-    $errMsg = urlencode("Errore inserimento: " . $stmt->error);
-    header("Location: home.php?err=$errMsg");
+    die("Errore nell'inserimento: " . $stmt->error);
 }
-
-$stmt->close();
-$connessione->close();
-exit;
 ?>
