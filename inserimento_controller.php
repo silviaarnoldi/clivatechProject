@@ -9,12 +9,12 @@ if (!isset($_SESSION['id'])) {
 
 // Prendo i dati POST senza forzare a int dove non serve
 
-$id_commessa = $_GET['id_commessa'] 
+$commessa_id = $_GET['id_commessa'] 
     ?? $_SESSION['id_commessa'] 
     ?? $_COOKIE['id_commessa'] 
     ?? null;
 
-if ($id_commessa === null) {
+if ($commessa_id === null) {
     die("Commessa non specificata.");
 }
 $nome_attivita = intval($_POST['nomeattivita'] ?? 0);
@@ -32,8 +32,7 @@ if (!$commessa_id || !$nome_attivita || !$categoria || !$tipo || !$durata || !$d
 }
 
 // Controllo che la commessa esista (senza prepare e bind_param)
-$commessa_id_escaped = $connessione->real_escape_string($commessa_id);
-$query = "SELECT ID FROM COMMESSA WHERE ID = '$commessa_id_escaped'";
+$query = "SELECT ID FROM COMMESSA WHERE ID = '$commessa_id'";
 $result = $connessione->query($query);
 
 if (!$result || $result->num_rows === 0) {
@@ -44,7 +43,7 @@ if (!$result || $result->num_rows === 0) {
 try {
     $inizio = new DateTime($data_inizio);
     $fine = clone $inizio;
-    $fine->modify("+$durata days");
+    $fine->modify("+".($durata - 1)." days");
     $data_fine = $fine->format('Y-m-d');
 } catch (Exception $e) {
     die("Data di inizio non valida.");

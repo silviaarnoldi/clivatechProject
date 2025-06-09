@@ -44,8 +44,8 @@ if (!$tipi) {
 <body class="bg-light">
 <div class="container py-5">
     <h1 class="mb-4">✏️ Modifica Attività</h1>
-    <form action="modifica_controller.php" method="POST" class="row g-3">
-        <input type="hidden" name="id" value="<?= htmlspecialchars($attività['ID']) ?>">
+    <form action="modifica_controller.php" method="POST">
+    <input type="hidden" name="id" value="<?= htmlspecialchars($id) ?>">
 
         <div class="col-12">
             <label>Nome Attività</label>
@@ -91,11 +91,16 @@ if (!$tipi) {
             <label>Durata</label>
             <input type="number" name="durata" class="form-control" value="<?= htmlspecialchars($attivita['durata']) ?>" required>
         </div>
+        <div class="col-md-6">
+            <label>Percentuale</label>
+            <input type="number" name="percentuale" class="form-control" value="<?= htmlspecialchars($attivita['PERCENTUALE']) ?>" required>
+        </div>
 
         <div class="col-md-6">
             <label>Data Inizio</label>
             <input type="date" name="data_inizio" class="form-control" value="<?= htmlspecialchars($attivita['data_inizio']) ?>" required>
         </div>
+        <br>
 
         <?php if (!empty($attivita['collaboratori'])): ?>
         <div class="col-12">
