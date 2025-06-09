@@ -18,16 +18,16 @@ if (!$id || !is_numeric($id)) {
 $id = intval($id);
 
 // Recupero dati attuali
-$result = $connessione->query("SELECT * FROM attività WHERE ID = $id");
+$result = $connessione->query("SELECT * FROM attivita WHERE ID = $id");
 if (!$result || $result->num_rows === 0) {
     die("Attività non trovata.");
 }
 $attivita = $result->fetch_assoc();
 
 // Recupero dei dati dal POST (se presenti), altrimenti uso quelli già nel DB
-$nomeattivita = isset($_POST['nomeattivita']) ? intval($_POST['nomeattivita']) : intval($attivita['nomeattività_id']);
+$nomeattivita = isset($_POST['nomeattivita']) ? intval($_POST['nomeattivita']) : intval($attivita['nomeattivita_id']);
 $categoria = isset($_POST['categoria']) ? intval($_POST['categoria']) : intval($attivita['categoria_id']);
-$tipo = isset($_POST['tipo']) ? intval($_POST['tipo']) : intval($attivita['tipoattività_id']);
+$tipo = isset($_POST['tipo']) ? intval($_POST['tipo']) : intval($attivita['tipoattivita_id']);
 $durata = isset($_POST['durata']) ? intval($_POST['durata']) : intval($attivita['durata']);
 $percentuale = isset($_POST['percentuale']) ? intval($_POST['percentuale']) : intval($attivita['PERCENTUALE']);
 $data_inizio = !empty($_POST['data_inizio']) ? $connessione->real_escape_string($_POST['data_inizio']) : $attivita['data_inizio'];
@@ -48,10 +48,10 @@ if (!empty($data_inizio) && !empty($data_fine) && strtotime($data_fine) < strtot
 
 // Costruzione query
 $sql = "
-    UPDATE attività SET
-        nomeattività_id = $nomeattivita,
+    UPDATE attivita SET
+        nomeattivita_id = $nomeattivita,
         categoria_id = $categoria,
-        tipoattività_id = $tipo,
+        tipoattivita_id = $tipo,
         durata = $durata,
         PERCENTUALE = $percentuale,
         data_inizio = '$data_inizio',

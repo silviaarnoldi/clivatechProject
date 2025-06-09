@@ -30,17 +30,17 @@ CREATE TABLE tipo (
     ID INTEGER PRIMARY KEY AUTO_INCREMENT,
     tipoattività VARCHAR(255)
 );
-CREATE TABLE nomeattività (
+CREATE TABLE NOMEATTIVITA (
     ID INTEGER PRIMARY KEY AUTO_INCREMENT,
-    nomeattività VARCHAR(255)
+    nomeattivita VARCHAR(255)
 );
-CREATE TABLE attività (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE attivita (
+  id INT INTEGER PRIMARY KEY AUTO_INCREMENT,
   COMMESSA_ID VARCHAR(255),
-  nomeattività_id INT,
+  nomeattivita_id INT,
   descrizione TEXT,
   categoria_id INT,
-  tipoattività_id INT,
+  tipoattivita_id INT,
   durata INT,
   data_inizio DATE,
   data_fine DATE,
@@ -48,8 +48,8 @@ CREATE TABLE attività (
   COLLABORATORI TEXT,
   PERCENTUALE INT,
   FOREIGN KEY (COMMESSA_ID) REFERENCES COMMESSA(ID),
-    FOREIGN KEY (nomeattività_id) REFERENCES nomeattività(ID),
-    FOREIGN KEY (tipoattività_id) REFERENCES tipo(ID),
+    FOREIGN KEY (nomeattivita_id) REFERENCES NOMEATTIVITA(ID),
+    FOREIGN KEY (tipoattivita_id) REFERENCES tipo(ID),
   FOREIGN KEY (categoria_id) REFERENCES categoria(ID),
   FOREIGN KEY (referente) REFERENCES UTENTE(ID)
 );
@@ -76,30 +76,30 @@ insert into categoria (TIPOCATEGORIA) values ('Impianti');
 insert into categoria (TIPOCATEGORIA) values ('Quadri');
 insert into categoria (TIPOCATEGORIA) values ('Automazione');
 -- Poi i TIPI
-insert into tipo (tipoattività) values ('Previsione');
-insert into tipo (tipoattività) values ('Vincolante');
-insert into tipo (tipoattività) values ('Consuntivo');
-insert into tipo (tipoattività) values ('Ripianificcata');
+insert into tipo (tipoattivita) values ('Previsione');
+insert into tipo (tipoattivita) values ('Vincolante');
+insert into tipo (tipoattivita) values ('Consuntivo');
+insert into tipo (tipoattivita) values ('Ripianificcata');
 -- Poi i NOMEATTIVITA'
-insert into nomeattività (nomeattività) values ('Inizio Progetto');
-insert into nomeattività (nomeattività) values ('Raccolta Informazioni e Documenti Cliente');
-insert into nomeattività (nomeattività) values ('Analisi Documentazione Cliente');
-insert into nomeattività (nomeattività) values ('Verifica / Riesame');
-insert into nomeattività (nomeattività) values ('Approvazione Cliente');
-insert into nomeattività (nomeattività) values ('Documentazione Finale');
-insert into nomeattività (nomeattività) values ('Validazione');
-insert into nomeattività (nomeattività) values ('Sviluppo Disegni Quadri Elettrici');
-insert into nomeattività (nomeattività) values ('Sviluppo Planimetrie');
-insert into nomeattività (nomeattività) values ('Dimensionamento Linee in Cavo');
-insert into nomeattività (nomeattività) values ('Calcoli Illuminotecnici');
-insert into nomeattività (nomeattività) values ('Verifica Circuiti a Sicurezza Intrinseca');
-insert into nomeattività (nomeattività) values ('Tabelle Cavi');
-insert into nomeattività (nomeattività) values ('Architettura di Rete');
-insert into nomeattività (nomeattività) values ('Sviluppo I/O List');
-insert into nomeattività (nomeattività) values ('Sviluppo Specifiche Funzionali');
-insert into nomeattività (nomeattività) values ('Sviluppo Hardware Design Specification');
-insert into nomeattività (nomeattività) values ('Sviluppo Software Design Specification');
-insert into nomeattività (nomeattività) values ('Sviluppo Data Management System');
-insert into nomeattività (nomeattività) values ('Sviluppo Protocolli di IQ / OQ');
+insert into nomeattivita (nomeattivita) values ('Inizio Progetto');
+insert into nomeattivita (nomeattivita) values ('Raccolta Informazioni e Documenti Cliente');
+insert into nomeattivita (nomeattivita) values ('Analisi Documentazione Cliente');
+insert into nomeattivita (nomeattivita) values ('Verifica / Riesame');
+insert into nomeattivita (nomeattivita) values ('Approvazione Cliente');
+insert into nomeattivita (nomeattivita) values ('Documentazione Finale');
+insert into nomeattivita (nomeattivita) values ('Validazione');
+insert into nomeattivita (nomeattivita) values ('Sviluppo Disegni Quadri Elettrici');
+insert into nomeattivita (nomeattivita) values ('Sviluppo Planimetrie');
+insert into nomeattivita (nomeattivita) values ('Dimensionamento Linee in Cavo');
+insert into nomeattivita (nomeattivita) values ('Calcoli Illuminotecnici');
+insert into nomeattivita (nomeattivita) values ('Verifica Circuiti a Sicurezza Intrinseca');
+insert into nomeattivita (nomeattivita) values ('Tabelle Cavi');
+insert into nomeattivita (nomeattivita) values ('Architettura di Rete');
+insert into nomeattivita (nomeattivita) values ('Sviluppo I/O List');
+insert into nomeattivita (nomeattività) values ('Sviluppo Specifiche Funzionali');
+insert into nomeattivita (nomeattivita) values ('Sviluppo Hardware Design Specification');
+insert into nomeattivita (nomeattivita) values ('Sviluppo Software Design Specification');
+insert into nomeattivita (nomeattivita) values ('Sviluppo Data Management System');
+insert into nomeattivita (nomeattivita) values ('Sviluppo Protocolli di IQ / OQ');
 
 

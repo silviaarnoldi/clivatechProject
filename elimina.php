@@ -21,7 +21,7 @@ if (!$connessione) {
 }
 
 // Elimina attività
-$stmt = $connessione->prepare("DELETE FROM attività WHERE id = ?");
+$stmt = $connessione->prepare("DELETE FROM attivita WHERE id = ?");
 $stmt->bind_param("i", $id);
 
 if ($stmt->execute()) {

@@ -9,7 +9,7 @@ if (!isset($_SESSION['id'])) {
 
 $id = intval($_GET['id'] ?? 0);
 
-$query = $connessione->query("SELECT * FROM attività WHERE ID = $id");
+$query = $connessione->query("SELECT * FROM attivita WHERE ID = $id");
 if (!$query) {
     die("Errore query attività: " . $connessione->error);
 }
@@ -19,9 +19,9 @@ if (!$attivita) {
     die("Attività non trovata.");
 }
 
-$nomi_attivita = $connessione->query("SELECT * FROM nomeattività ORDER BY nomeattività");
+$nomi_attivita = $connessione->query("SELECT * FROM nomeattivita ORDER BY nomeattivita");
 if (!$nomi_attivita) {
-    die("Errore query nomeattività: " . $connessione->error);
+    die("Errore query nomeattivita: " . $connessione->error);
 }
 $categorie = $connessione->query("SELECT * FROM categoria ORDER BY TIPOCATEGORIA");
 if (!$categorie) {
@@ -51,8 +51,8 @@ if (!$tipi) {
             <label>Nome Attività</label>
             <select name="nomeattivita" class="form-select" required>
                 <?php while ($r = $nomi_attivita->fetch_assoc()): ?>
-                    <option value="<?= $r['ID'] ?>" <?= isset($attivita['nomeattività_id']) && $r['ID'] == $attivita['nomeattività_id'] ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($r['nomeattività']) ?>
+                    <option value="<?= $r['ID'] ?>" <?= isset($attivita['nomeattivita_id']) && $r['ID'] == $attivita['nomeattivita_id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($r['nomeattivita']) ?>
                     </option>
                 <?php endwhile; ?>
             </select>
@@ -80,8 +80,8 @@ if (!$tipi) {
             <label>Tipo</label>
             <select name="tipo" class="form-select" required>
                 <?php while ($t = $tipi->fetch_assoc()): ?>
-                    <option value="<?= $t['ID'] ?>" <?= isset($attivita['tipoattività_id']) && $t['ID'] == $attivita['tipoattività_id'] ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($t['tipoattività']) ?>
+                    <option value="<?= $t['ID'] ?>" <?= isset($attivita['tipoattivita_id']) && $t['ID'] == $attivita['tipoattivita_id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($t['tipoattivita']) ?>
                     </option>
                 <?php endwhile; ?>
             </select>

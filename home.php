@@ -29,7 +29,7 @@ if (!$connessione) {
 }
 
 $tipi = $connessione->query("SELECT * FROM tipo ORDER BY ID");
-$nomi_attivita = $connessione->query("SELECT * FROM nomeattività ORDER BY nomeattività");
+$nomi_attivita = $connessione->query("SELECT * FROM nomeattivita ORDER BY nomeattivita");
 $categorie = $connessione->query("SELECT * FROM categoria ORDER BY TIPOCATEGORIA");
 $utenti = $connessione->query("SELECT * FROM UTENTE WHERE ID = " . intval($_SESSION['id']));
 $u = $utenti->fetch_assoc();
@@ -38,31 +38,31 @@ $filtro_categoria = $_GET['filtro_categoria'] ?? '';
 
 $query = "
 SELECT 
-    attività.ID,
-    nomeattività.nomeattività AS nome_attivita,
-    attività.commessa_id,
-    attività.durata,
-    attività.data_inizio,
-    attività.data_fine,
-    attività.referente,
-    attività.collaboratori,
-    attività.PERCENTUALE,
-    attività.descrizione,
+    attivita.ID,
+    nomeattivita.nomeattivita AS nome_attivita,
+    attivita.commessa_id,
+    attivita.durata,
+    attivita.data_inizio,
+    attivita.data_fine,
+    attivita.referente,
+    attivita.collaboratori,
+    attivita.PERCENTUALE,
+    attivita.descrizione,
     categoria.TIPOCATEGORIA, 
     CONCAT(UTENTE.NOME, ' ', UTENTE.COGNOME) AS referente_nome,
     tipo.ID as tipo_id,
-    tipo.tipoattività as tipo_nome
-FROM attività
-    JOIN categoria ON attività.categoria_id = categoria.ID
-    JOIN UTENTE ON attività.referente = UTENTE.ID
-    LEFT JOIN tipo ON attività.tipoattività_id = tipo.ID
-    JOIN nomeattività ON attività.nomeattività_id = nomeattività.ID
+    tipo.tipoattivita as tipo_nome
+FROM attivita
+    JOIN categoria ON attivita.categoria_id = categoria.ID
+    JOIN UTENTE ON attivita.referente = UTENTE.ID
+    LEFT JOIN tipo ON attivita.tipoattivita_id = tipo.ID
+    JOIN nomeattivita ON attivita.nomeattivita_id = nomeattivita.ID
 ";
 
 $whereClauses = [];
 
 if ($id_commessa !== null) {
-    $whereClauses[] = "attività.commessa_id = " . intval($id_commessa);
+    $whereClauses[] = "attivita.commessa_id = " . intval($id_commessa);
 }
 
 if ($filtro_categoria !== '') {
@@ -70,13 +70,13 @@ if ($filtro_categoria !== '') {
 }
 
 // Filtro per l'utente loggato come referente
-$whereClauses[] = "attività.referente = " . intval($_SESSION['id']);
+$whereClauses[] = "attivita.referente = " . intval($_SESSION['id']);
 
 if (!empty($whereClauses)) {
     $query .= " WHERE " . implode(" AND ", $whereClauses);
 }
 
-$query .= " ORDER BY attività.data_inizio DESC";
+$query .= " ORDER BY attivita.data_inizio DESC";
 
 $progetti_query = $connessione->query($query);
 $progetti_array = [];
@@ -125,7 +125,7 @@ foreach ($progetti_array as $row) {
 }
 
 if ($minDate === null || $maxDate === null) {
-    echo "Nessuna attività trovata.";
+    echo "Nessuna attivita trovata.";
     $mesiTotali = [];
     $startIndex = null;
 } else {
@@ -272,7 +272,7 @@ if ($id_commessa === null) {
               <select name="nomeattivita" id="nome_attivita" class="form-select" required>
                 <option value="">— Seleziona Nome Attività —</option>
                 <?php while ($attivita = $nomi_attivita->fetch_assoc()): ?>
-                  <option value="<?= $attivita['ID'] ?>"><?= htmlspecialchars($attivita['nomeattività']) ?></option>
+                  <option value="<?= $attivita['ID'] ?>"><?= htmlspecialchars($attivita['nomeattivita']) ?></option>
                 <?php endwhile; ?>
               </select>
             </div>
@@ -304,7 +304,7 @@ if ($id_commessa === null) {
                 <?php
                 $tipi->data_seek(0);
                 while ($tipo = $tipi->fetch_assoc()): ?>
-                  <option value="<?= $tipo['ID'] ?>"><?= htmlspecialchars($tipo['tipoattività']) ?></option>
+                  <option value="<?= $tipo['ID'] ?>"><?= htmlspecialchars($tipo['tipoattivita']) ?></option>
                 <?php endwhile; ?>
               </select>
             </div>

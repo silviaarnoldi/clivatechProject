@@ -51,8 +51,8 @@ try {
 
 // Preparo inserimento
 $stmt = $connessione->prepare("
-    INSERT INTO attività 
-    (COMMESSA_ID, nomeattività_id, categoria_id, tipoattività_id, durata, data_inizio, data_fine, referente, collaboratori, descrizione, PERCENTUALE)
+    INSERT INTO attivita 
+    (COMMESSA_ID, nomeattivita_id, categoria_id, tipoattivita_id, durata, data_inizio, data_fine, referente, collaboratori, descrizione, PERCENTUALE)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
 ");
 
