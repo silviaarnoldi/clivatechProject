@@ -28,7 +28,7 @@ CREATE TABLE categoria (
 
 CREATE TABLE tipo (
     ID INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tipoattività VARCHAR(255)
+    tipoattivita VARCHAR(255)
 );
 CREATE TABLE NOMEATTIVITA (
     ID INTEGER PRIMARY KEY AUTO_INCREMENT,
@@ -96,7 +96,7 @@ insert into nomeattivita (nomeattivita) values ('Verifica Circuiti a Sicurezza I
 insert into nomeattivita (nomeattivita) values ('Tabelle Cavi');
 insert into nomeattivita (nomeattivita) values ('Architettura di Rete');
 insert into nomeattivita (nomeattivita) values ('Sviluppo I/O List');
-insert into nomeattivita (nomeattività) values ('Sviluppo Specifiche Funzionali');
+insert into nomeattivita (nomeattivita) values ('Sviluppo Specifiche Funzionali');
 insert into nomeattivita (nomeattivita) values ('Sviluppo Hardware Design Specification');
 insert into nomeattivita (nomeattivita) values ('Sviluppo Software Design Specification');
 insert into nomeattivita (nomeattivita) values ('Sviluppo Data Management System');
